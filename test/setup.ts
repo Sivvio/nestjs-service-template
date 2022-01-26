@@ -30,6 +30,27 @@ afterAll(async () => {
 
 
 const initInMemoryDatabase = async () => {
+    const fs = require('fs');
+    const path = require('path');
+
+    const getFiles = path => {
+        const files = []
+        for (const file of fs.readdirSync(path)) {
+            const fullPath = path + '/' + file
+            if(fs.lstatSync(fullPath).isDirectory())
+                getFiles(fullPath).forEach(x => files.push(file + '/' + x))
+            else files.push(file)
+        }
+        return files.filter(f => f.endsWith('.entity.ts'));
+    };
+
+    const getClassName = (path) => {
+        const file = /[^\/]+$/.exec(path)[0];
+        let className = /^([^.]+)/.exec(file)[0];
+        return className[0].toUpperCase().concat(className.substring(1))
+    }
+
+
     db = newDb({
         autoCreateForeignKeyIndices: true,
     });
@@ -51,17 +72,20 @@ const initInMemoryDatabase = async () => {
         name: 'uuid_generate_v4',
         implementation: () => randomUUID()
     });
-
+    
     const connection = await db.adapters.createTypeormConnection({
         type: "postgres",
         database: ":memory:",
         dropSchema: true,
-        entities: [],
+        // this is a big hack! In order to get all the entities automatically, we are reading every file that contains .entity.ts as filename,
+        // import the file and extract the class name. This works provided that the class name equals the class filename
+        entities: getFiles(path.join(__dirname, '../src')).map(f => require(path.join(__dirname,`../src/${f}`))[getClassName(f)]),
         synchronize: true,
-        logging: false
+        logging: false,
     });
 
     await connection.synchronize();
 
     dbBackup = db.backup();
+
 }
