@@ -3,6 +3,7 @@ import {AppModule} from "../src/app.module";
 import {INestApplication} from "@nestjs/common";
 import {newDb} from 'pg-mem';
 import {randomUUID} from "crypto";
+import * as _ from 'lodash';
 
 export let testApp: INestApplication;
 let db;
@@ -46,8 +47,7 @@ const initInMemoryDatabase = async () => {
 
     const getClassName = (path) => {
         const file = /[^\/]+$/.exec(path)[0];
-        let className = /^([^.]+)/.exec(file)[0];
-        return className[0].toUpperCase().concat(className.substring(1))
+        return _.upperFirst(_.camelCase(/^([^.]+)/.exec(file)[0]));
     }
 
 
