@@ -69,8 +69,11 @@ const initInMemoryDatabase = async () => {
     });
 
     db.public.registerFunction({
+        // forces a new random uuid everytime the function is called
+        implementation(inArguments: any): AdvancedResult | PlainResult {
+            return () => randomUUID();
+        },
         name: 'uuid_generate_v4',
-        implementation: () => randomUUID()
     });
     
     const connection = await db.adapters.createTypeormConnection({
